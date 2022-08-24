@@ -5,14 +5,25 @@ import (
 	"strings"
 )
 
+const (
+	singleQuote = `'`
+	quote       = `"`
+)
+
+// Literal can be used to tell the Query builder to not wrap the value
+// with quotes.  An example would be something like
+// q.NotEqual("subject", aql.Literal("null"))
+// this would become subject != null
+type Literal string
+
 type Query interface {
-	Equal(attr, value string) Query
-	NotEqual(attr, value string) Query
-	In(attr string, values []string) Query
-	Gtr(attr string, value string) Query
-	Less(attr string, value string) Query
-	GtrEqualTo(attr string, value string) Query
-	LessEqualTo(attr string, value string) Query
+	Equal(attr string, value any) Query
+	NotEqual(attr string, value any) Query
+	In(attr string, values []any) Query
+	Gtr(attr string, value any) Query
+	Less(attr string, value any) Query
+	GtrEqualTo(attr string, value any) Query
+	LessEqualTo(attr string, value any) Query
 
 	And() Query
 	Or() Query
@@ -22,6 +33,15 @@ type Query interface {
 
 type StringQuery struct {
 	q []string
+}
+
+func (s *StringQuery) sprintf(value any, quote string) string {
+	switch t := value.(type) {
+	case Literal:
+		return string(t)
+	default:
+		return fmt.Sprintf(`%s%s%s`, quote, value, quote)
+	}
 }
 
 func (s *StringQuery) append(vals ...string) *StringQuery {
@@ -37,31 +57,31 @@ func (s *StringQuery) Or() Query {
 	return s.append("OR")
 }
 
-func (s *StringQuery) Gtr(attr, value string) Query {
-	return s.append(attr, ">", fmt.Sprintf(`"%s"`, value))
+func (s *StringQuery) Gtr(attr string, value any) Query {
+	return s.append(attr, ">", s.sprintf(value, quote))
 }
 
-func (s *StringQuery) Less(attr, value string) Query {
-	return s.append(attr, "<", fmt.Sprintf(`"%s"`, value))
+func (s *StringQuery) Less(attr string, value any) Query {
+	return s.append(attr, "<", s.sprintf(value, quote))
 }
 
-func (s *StringQuery) GtrEqualTo(attr, value string) Query {
-	return s.append(attr, ">=", fmt.Sprintf(`"%s"`, value))
+func (s *StringQuery) GtrEqualTo(attr string, value any) Query {
+	return s.append(attr, ">=", s.sprintf(value, quote))
 }
 
-func (s *StringQuery) LessEqualTo(attr, value string) Query {
-	return s.append(attr, "<=", fmt.Sprintf(`"%s"`, value))
+func (s *StringQuery) LessEqualTo(attr string, value any) Query {
+	return s.append(attr, "<=", s.sprintf(value, quote))
 }
 
-func (s *StringQuery) Equal(attr, value string) Query {
-	return s.append(attr, "=", fmt.Sprintf(`"%s"`, value))
+func (s *StringQuery) Equal(attr string, value any) Query {
+	return s.append(attr, "=", s.sprintf(value, quote))
 }
 
-func (s *StringQuery) NotEqual(attr, value string) Query {
-	return s.append(attr, "!=", fmt.Sprintf(`"%s"`, value))
+func (s *StringQuery) NotEqual(attr string, value any) Query {
+	return s.append(attr, "!=", s.sprintf(value, quote))
 }
 
-func (s *StringQuery) In(attr string, values []string) Query {
+func (s *StringQuery) In(attr string, values []any) Query {
 
 	var tupleStr string
 	for i, v := range values {
@@ -69,7 +89,7 @@ func (s *StringQuery) In(attr string, values []string) Query {
 			tupleStr += "("
 		}
 
-		tupleStr += fmt.Sprintf(`'%s'`, v)
+		tupleStr += s.sprintf(v, singleQuote)
 
 		if i == len(values)-1 {
 			tupleStr += ")"

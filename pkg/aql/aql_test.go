@@ -23,7 +23,7 @@ func TestStringQuery(t *testing.T) {
 			NewStringQuery().Equal("attribute", "value").
 				And().GtrEqualTo("len", "0").
 				And().LessEqualTo("len", "0").
-				And().In("thinger", []string{"one", "two"}),
+				And().In("thinger", []any{"one", "two"}),
 			`attribute = "value" AND len >= "0" AND len <= "0" AND thinger in ('one', 'two')`,
 		},
 		{
@@ -32,6 +32,12 @@ func TestStringQuery(t *testing.T) {
 				And().GtrEqualTo("len", "0").
 				Or().LessEqualTo("len", "0"),
 			`attribute = "value" AND len >= "0" OR len <= "0"`,
+		},
+		{
+			"should support literal strings like null",
+			NewStringQuery().Equal("attribute", "value").
+				And().NotEqual("recommended", Literal("null")),
+			`attribute = "value" AND recommended != null`,
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
