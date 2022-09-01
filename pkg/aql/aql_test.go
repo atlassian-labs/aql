@@ -19,6 +19,16 @@ func TestStringQuery(t *testing.T) {
 			`attribute = "value"`,
 		},
 		{
+			"should generate a statement with a int",
+			NewStringQuery().Equal("number", 135),
+			`number = 135`,
+		},
+		{
+			"should group query together",
+			NewStringQuery().Group(NewStringQuery().Equal("value", "one").Or().Equal("value", "three")),
+			`( value = "one" OR value = "three" )`,
+		},
+		{
 			"should support more complex queries",
 			NewStringQuery().Equal("attribute", "value").
 				And().GtrEqualTo("len", "0").

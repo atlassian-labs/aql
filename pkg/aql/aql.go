@@ -2,6 +2,7 @@ package aql
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -16,6 +17,10 @@ const (
 // this would become subject != null
 type Literal string
 
+const (
+	Null Literal = "null"
+)
+
 type Query interface {
 	Equal(attr string, value any) Query
 	NotEqual(attr string, value any) Query
@@ -24,6 +29,7 @@ type Query interface {
 	Less(attr string, value any) Query
 	GtrEqualTo(attr string, value any) Query
 	LessEqualTo(attr string, value any) Query
+	Group(Query) Query
 
 	And() Query
 	Or() Query
@@ -39,6 +45,8 @@ func (s *StringQuery) sprintf(value any, quote string) string {
 	switch t := value.(type) {
 	case Literal:
 		return string(t)
+	case int:
+		return strconv.Itoa(t)
 	default:
 		return fmt.Sprintf(`%s%s%s`, quote, value, quote)
 	}
@@ -47,6 +55,10 @@ func (s *StringQuery) sprintf(value any, quote string) string {
 func (s *StringQuery) append(vals ...string) *StringQuery {
 	s.q = append(s.q, vals...)
 	return s
+}
+
+func (s *StringQuery) Group(q Query) Query {
+	return s.append(fmt.Sprintf("( %s )", q.Encode()))
 }
 
 func (s *StringQuery) And() Query {
