@@ -29,6 +29,7 @@ type Query interface {
 	Less(attr string, value any) Query
 	GtrEqualTo(attr string, value any) Query
 	LessEqualTo(attr string, value any) Query
+	Contains(attr string, value any) Query
 	Group(Query) Query
 
 	And() Query
@@ -63,6 +64,10 @@ func (s *StringQuery) Group(q Query) Query {
 
 func (s *StringQuery) And() Query {
 	return s.append("AND")
+}
+
+func (s *StringQuery) Contains(attr string, value any) Query {
+	return s.append(attr, "~", s.sprintf(value, quote))
 }
 
 func (s *StringQuery) Or() Query {

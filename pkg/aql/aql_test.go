@@ -33,8 +33,10 @@ func TestStringQuery(t *testing.T) {
 			NewStringQuery().Equal("attribute", "value").
 				And().GtrEqualTo("len", "0").
 				And().LessEqualTo("len", "0").
-				And().In("thinger", []any{"one", "two"}),
-			`attribute = "value" AND len >= "0" AND len <= "0" AND thinger in ('one', 'two')`,
+				And().In("thinger", []any{"one", "two"}).
+				And().Contains("comment", "mchandler"),
+
+			`attribute = "value" AND len >= "0" AND len <= "0" AND thinger in ('one', 'two') AND comment ~ "mchandler"`,
 		},
 		{
 			"should support more or queries",
