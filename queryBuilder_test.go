@@ -11,7 +11,7 @@ func TestQueryBuilder(t *testing.T) {
 	for _, test := range []struct {
 		name     string
 		query    *QueryBuilder
-		expected string
+		expected JqlQuery
 	}{
 		{
 			"should generate a basic statement",
@@ -20,13 +20,13 @@ func TestQueryBuilder(t *testing.T) {
 		},
 		{
 			"should generate a statement with a int",
-			NewQueryBuilder().Equal("number", 135),
-			`number = 135`,
+			NewQueryBuilder().Equal("numberOfAttachments", 135),
+			`numberOfAttachments = 135`,
 		},
 		{
 			"should group query together",
-			NewQueryBuilder().Group(NewQueryBuilder().Equal("value", "one").Or().Equal("value", "three")),
-			`( value = "one" OR value = "three" )`,
+			NewQueryBuilder().Group(NewQueryBuilder().Equal("project", "one").Or().Equal("project", "three")),
+			`( project = "one" OR project = "three" )`,
 		},
 		{
 			"should support more complex queries",
@@ -53,7 +53,9 @@ func TestQueryBuilder(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			assert.Equal(t, test.expected, test.query.Encode())
+			q, err := test.query.Encode()
+			assert.Nil(t, err)
+			assert.Equal(t, test.expected, q)
 		})
 	}
 
