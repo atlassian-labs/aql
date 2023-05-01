@@ -11,7 +11,7 @@ const (
 	quote       = `"`
 )
 
-// Literal can be used to tell the Query builder to not wrap the value
+// Literal can be used to tell the *StringQuery builder to not wrap the value
 // with quotes.  An example would be something like
 // q.NotEqual("subject", aql.Literal("null"))
 // this would become subject != null
@@ -82,7 +82,6 @@ func (s *QueryBuilder) NotEqual(attr string, value any) *QueryBuilder {
 }
 
 func (s *QueryBuilder) In(attr string, values []any) *QueryBuilder {
-
 	var tupleStr string
 	for i, v := range values {
 		if i == 0 {
@@ -109,4 +108,107 @@ func NewQueryBuilder() *QueryBuilder {
 	return &QueryBuilder{
 		q: make([]string, 0),
 	}
+}
+
+func Parse(in string) (*QueryBuilder, error) {
+	var q = NewQueryBuilder()
+
+	var tokens = strings.Split(strings.TrimSpace(in), " ")
+	if len(tokens) < 3 {
+		return nil, fmt.Errorf("aql: query should be more then 3 characters")
+	}
+
+	var scanValue = func(start int, tokens []string) (int, any) {
+		var value = tokens[start]
+
+		if strings.HasPrefix(value, quote) || strings.HasPrefix(value, singleQuote) {
+			value = value[1:]
+		} else {
+			return start, Literal(value)
+		}
+
+		var i int
+		for i = start + 1; i <= len(tokens)-1; i++ {
+			nv := tokens[i]
+			value = value + " " + nv
+
+			if strings.HasSuffix(value, quote) || strings.HasSuffix(value, singleQuote) {
+				break
+			}
+		}
+
+		value = value[:len(value)-1]
+
+		return i, value
+	}
+
+	var scanGroup = func(start int, tokens []string) (int, []any) {
+		var out = []any{tokens[start][2 : len(tokens[start])-2]}
+
+		var i int
+		for i = start + 1; i <= len(tokens); i++ {
+			t := tokens[i]
+			if strings.HasSuffix(t, ",") {
+				out = append(out, t[1:len(t)-2])
+			}
+			if strings.HasSuffix(t, ")") {
+				out = append(out, t[1:len(t)-2])
+				break
+			}
+		}
+
+		return i, out
+
+	}
+
+	for i := 1; i <= len(tokens)-1; i++ {
+		var char = tokens[i]
+
+		if char == " " {
+			continue
+		}
+
+		var (
+			attr   string
+			value  any
+			values []any
+		)
+
+		attr = tokens[i-1]
+
+		switch char {
+		case "<=":
+			i, value = scanValue(i+1, tokens)
+			q = q.LessEqualTo(attr, value)
+		case "<":
+			i, value = scanValue(i+1, tokens)
+			q = q.Less(attr, value)
+		case ">=":
+			i, value = scanValue(i+1, tokens)
+			q = q.GtrEqualTo(attr, value)
+		case ">":
+			i, value = scanValue(i+1, tokens)
+			q = q.Gtr(attr, value)
+		case "=":
+			i, value = scanValue(i+1, tokens)
+			q = q.Equal(attr, value)
+		case "!=":
+			i, value = scanValue(i+1, tokens)
+			q = q.NotEqual(attr, value)
+		case "~":
+			i, value = scanValue(i+1, tokens)
+			q = q.Contains(attr, value)
+		case "in":
+			i, values = scanGroup(i+1, tokens)
+			q = q.In(attr, values)
+		case "AND":
+			q = q.And()
+		case "OR":
+			q = q.Or()
+		default:
+			return nil, fmt.Errorf("aql: unknown validation %s", char)
+		}
+	}
+
+	return q, nil
 }

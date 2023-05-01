@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestQueryBuilder(t *testing.T) {
@@ -57,4 +58,86 @@ func TestQueryBuilder(t *testing.T) {
 		})
 	}
 
+}
+
+func TestParse(t *testing.T) {
+	for _, test := range []struct {
+		in       string
+		err      bool
+		rawQuery []string
+	}{
+		{
+			`something = null`,
+			false,
+			[]string{"something", "=", `null`},
+		},
+		{
+			`something = "contains thing"`,
+			false,
+			[]string{"something", "=", `"contains thing"`},
+		},
+		{
+			`something != "contains thing"`,
+			false,
+			[]string{"something", "!=", `"contains thing"`},
+		},
+		{
+			`something ~ "contains thing"`,
+			false,
+			[]string{"something", "~", `"contains thing"`},
+		},
+		{
+			`something > "2011-01-01"`,
+			false,
+			[]string{"something", ">", `"2011-01-01"`},
+		},
+		{
+			`something >= "2011-01-01"`,
+			false,
+			[]string{"something", ">=", `"2011-01-01"`},
+		},
+		{
+			`something in ("one", "two")`,
+			false,
+			[]string{"something", "in", `('one', 'two')`},
+		},
+		{
+			`something in ("one", "two", "three")`,
+			false,
+			[]string{"something", "in", `('one', 'two', 'three')`},
+		},
+		{
+			`something < "2011-01-01"`,
+			false,
+			[]string{"something", "<", `"2011-01-01"`},
+		},
+		{
+			`something <= "2011-01-01"`,
+			false,
+			[]string{"something", "<=", `"2011-01-01"`},
+		},
+		{
+			`small query`,
+			true,
+			nil,
+		},
+		{
+			`something !! failure`,
+			true,
+			nil,
+		},
+	} {
+		t.Run(test.in, func(t *testing.T) {
+			q, err := Parse(test.in)
+			if test.err {
+				assert.Error(t, err)
+				assert.Nil(t, q)
+				return
+			}
+
+			require.NoError(t, err)
+			assert.NotNil(t, q)
+			assert.Equal(t, test.rawQuery, q.q)
+		})
+	}
 }
