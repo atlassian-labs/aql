@@ -21,23 +21,6 @@ const (
 	Null Literal = "null"
 )
 
-type Query interface {
-	Equal(attr string, value any) Query
-	NotEqual(attr string, value any) Query
-	In(attr string, values []any) Query
-	Gtr(attr string, value any) Query
-	Less(attr string, value any) Query
-	GtrEqualTo(attr string, value any) Query
-	LessEqualTo(attr string, value any) Query
-	Contains(attr string, value any) Query
-	Group(Query) Query
-
-	And() Query
-	Or() Query
-
-	Encode() string
-}
-
 type StringQuery struct {
 	q []string
 }
@@ -58,47 +41,47 @@ func (s *StringQuery) append(vals ...string) *StringQuery {
 	return s
 }
 
-func (s *StringQuery) Group(q Query) Query {
+func (s *StringQuery) Group(q *StringQuery) *StringQuery {
 	return s.append(fmt.Sprintf("( %s )", q.Encode()))
 }
 
-func (s *StringQuery) And() Query {
+func (s *StringQuery) And() *StringQuery {
 	return s.append("AND")
 }
 
-func (s *StringQuery) Contains(attr string, value any) Query {
+func (s *StringQuery) Contains(attr string, value any) *StringQuery {
 	return s.append(attr, "~", s.sprintf(value, quote))
 }
 
-func (s *StringQuery) Or() Query {
+func (s *StringQuery) Or() *StringQuery {
 	return s.append("OR")
 }
 
-func (s *StringQuery) Gtr(attr string, value any) Query {
+func (s *StringQuery) Gtr(attr string, value any) *StringQuery {
 	return s.append(attr, ">", s.sprintf(value, quote))
 }
 
-func (s *StringQuery) Less(attr string, value any) Query {
+func (s *StringQuery) Less(attr string, value any) *StringQuery {
 	return s.append(attr, "<", s.sprintf(value, quote))
 }
 
-func (s *StringQuery) GtrEqualTo(attr string, value any) Query {
+func (s *StringQuery) GtrEqualTo(attr string, value any) *StringQuery {
 	return s.append(attr, ">=", s.sprintf(value, quote))
 }
 
-func (s *StringQuery) LessEqualTo(attr string, value any) Query {
+func (s *StringQuery) LessEqualTo(attr string, value any) *StringQuery {
 	return s.append(attr, "<=", s.sprintf(value, quote))
 }
 
-func (s *StringQuery) Equal(attr string, value any) Query {
+func (s *StringQuery) Equal(attr string, value any) *StringQuery {
 	return s.append(attr, "=", s.sprintf(value, quote))
 }
 
-func (s *StringQuery) NotEqual(attr string, value any) Query {
+func (s *StringQuery) NotEqual(attr string, value any) *StringQuery {
 	return s.append(attr, "!=", s.sprintf(value, quote))
 }
 
-func (s *StringQuery) In(attr string, values []any) Query {
+func (s *StringQuery) In(attr string, values []any) *StringQuery {
 
 	var tupleStr string
 	for i, v := range values {
