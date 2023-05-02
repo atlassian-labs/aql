@@ -21,11 +21,11 @@ const (
 	Null Literal = "null"
 )
 
-type QueryBuilder struct {
+type StringQuery struct {
 	q []string
 }
 
-func (s *QueryBuilder) sprintf(value any, quote string) string {
+func (s *StringQuery) sprintf(value any, quote string) string {
 	switch t := value.(type) {
 	case Literal:
 		return string(t)
@@ -36,52 +36,52 @@ func (s *QueryBuilder) sprintf(value any, quote string) string {
 	}
 }
 
-func (s *QueryBuilder) append(vals ...string) *QueryBuilder {
+func (s *StringQuery) append(vals ...string) *StringQuery {
 	s.q = append(s.q, vals...)
 	return s
 }
 
-func (s *QueryBuilder) Group(q *QueryBuilder) *QueryBuilder {
+func (s *StringQuery) Group(q *StringQuery) *StringQuery {
 	return s.append(fmt.Sprintf("( %s )", q.Encode()))
 }
 
-func (s *QueryBuilder) And() *QueryBuilder {
+func (s *StringQuery) And() *StringQuery {
 	return s.append("AND")
 }
 
-func (s *QueryBuilder) Contains(attr string, value any) *QueryBuilder {
+func (s *StringQuery) Contains(attr string, value any) *StringQuery {
 	return s.append(attr, "~", s.sprintf(value, quote))
 }
 
-func (s *QueryBuilder) Or() *QueryBuilder {
+func (s *StringQuery) Or() *StringQuery {
 	return s.append("OR")
 }
 
-func (s *QueryBuilder) Gtr(attr string, value any) *QueryBuilder {
+func (s *StringQuery) Gtr(attr string, value any) *StringQuery {
 	return s.append(attr, ">", s.sprintf(value, quote))
 }
 
-func (s *QueryBuilder) Less(attr string, value any) *QueryBuilder {
+func (s *StringQuery) Less(attr string, value any) *StringQuery {
 	return s.append(attr, "<", s.sprintf(value, quote))
 }
 
-func (s *QueryBuilder) GtrEqualTo(attr string, value any) *QueryBuilder {
+func (s *StringQuery) GtrEqualTo(attr string, value any) *StringQuery {
 	return s.append(attr, ">=", s.sprintf(value, quote))
 }
 
-func (s *QueryBuilder) LessEqualTo(attr string, value any) *QueryBuilder {
+func (s *StringQuery) LessEqualTo(attr string, value any) *StringQuery {
 	return s.append(attr, "<=", s.sprintf(value, quote))
 }
 
-func (s *QueryBuilder) Equal(attr string, value any) *QueryBuilder {
+func (s *StringQuery) Equal(attr string, value any) *StringQuery {
 	return s.append(attr, "=", s.sprintf(value, quote))
 }
 
-func (s *QueryBuilder) NotEqual(attr string, value any) *QueryBuilder {
+func (s *StringQuery) NotEqual(attr string, value any) *StringQuery {
 	return s.append(attr, "!=", s.sprintf(value, quote))
 }
 
-func (s *QueryBuilder) In(attr string, values []any) *QueryBuilder {
+func (s *StringQuery) In(attr string, values []any) *StringQuery {
 
 	var tupleStr string
 	for i, v := range values {
@@ -101,12 +101,12 @@ func (s *QueryBuilder) In(attr string, values []any) *QueryBuilder {
 	return s.append(attr, "in", tupleStr)
 }
 
-func (s *QueryBuilder) Encode() string {
+func (s *StringQuery) Encode() string {
 	return strings.Join(s.q, " ")
 }
 
-func NewQueryBuilder() *QueryBuilder {
-	return &QueryBuilder{
+func NewStringQuery() *StringQuery {
+	return &StringQuery{
 		q: make([]string, 0),
 	}
 }
